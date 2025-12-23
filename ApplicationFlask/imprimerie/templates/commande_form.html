@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if commande %}Modifier commande #{{ commande.no_commande }}{% else %}Nouvelle commande{% endif %} - Imprimerie Mosaïque
+{% endblock %}
+
+{% block content %}
+<style>
+    .similarite-warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 4px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        display: none;
+    }
+    .similarite-warning.show { display: block; }
+    .similarite-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .similarite-item:last-child { border-bottom: none; }
+    .similarite-item button { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+</style>
+
+<h2>{% if commande %}Modifier commande #{{ commande.no_commande }}{% else %}Nouvelle commande{% endif %}</h2>
+
+<form method="post" id="formCommande">
+
+    <!-- CLIENT -->
+    <fieldset>
+        <legend>Client</legend>
+        
+        <label>
+            Nom Compagnie *
+            <input type="text" name="nom_compagnie_cli" id="nom_compagnie_cli"
+                   list="liste_clients" placeholder="Taper pour rechercher..."
+                   value="{{ client_preselect.nom_compagnie_cli if client_preselect else (commande.nom_compagnie_cli if commande else '') }}" required>
+            <datalist id="liste_clients">
+                {% for client in clients %}
+                    <option value="{{ client.nom_compagnie_cli }}" 
+                            data-no="{{ client.no_client }}"
+                            data-prenom="{{ client.prenom_contact_cli or '' }}"
+                            data-nom="{{ client.nom_contact_cli or '' }}"
+                            data-adresse="{{ client.adresse_compagnie_cli or '' }}"
+                            data-ville="{{ client.ville_compagnie_cli or '' }}"
+                            data-cp="{{ client.code_postal_compagnie_cli or '' }}"
+                            data-tel="{{ client.numero_telephone_compagnie_cli or '' }}">
+                {% endfor %}
+            </datalist>
+        </label>
+        
+        <!-- Avertissement similarité trigramme -->
+        <div class="similarite-warning" id="similariteWarning">
+            <strong>Clients similaires trouvés:</strong>
+            <div id="similariteList"></div>
+        </div>
+        
+        <input type="hidden" name="no_client" id="no_client" 
+               value="{{ client_preselect.no_client if client_preselect else (commande.no_client if commande else '') }}">
+
+        <div class="grid">
+            <label>Prénom contact
+                <input type="text" name="prenom_contact_cli" id="prenom_contact_cli"
+                       value="{{ client_preselect.prenom_contact_cli if client_preselect else (commande.prenom_contact_cli if commande else '') }}">
+            </label>
+            <label>Nom contact
+                <input type="text" name="nom_contact_cli" id="nom_contact_cli"
+                       value="{{ client_preselect.nom_contact_cli if client_preselect else (commande.nom_contact_cli if commande else '') }}">
+            </label>
+        </div>
+
+        <label>Adresse
+            <input type="text" name="adresse_compagnie_cli" id="adresse_compagnie_cli"
+                   value="{{ client_preselect.adresse_compagnie_cli if client_preselect else (commande.adresse_compagnie_cli if commande else '') }}">
+        </label>
+
+        <div class="grid">
+            <label>Ville
+                <input type="text" name="ville_compagnie_cli" id="ville_compagnie_cli"
+                       value="{{ client_preselect.ville_compagnie_cli if client_preselect else (commande.ville_compagnie_cli if commande else '') }}">
+            </label>
+            <label>Code postal
+                <input type="text" name="code_postal_compagnie_cli" id="code_postal_compagnie_cli"
+                       value="{{ client_preselect.code_postal_compagnie_cli if client_preselect else (commande.code_postal_compagnie_cli if commande else '') }}">
+            </label>
+            <label>Téléphone
+                <input type="tel" name="numero_telephone_compagnie_cli" id="numero_telephone_compagnie_cli"
+                       value="{{ client_preselect.numero_telephone_compagnie_cli if client_preselect else (commande.numero_telephone_compagnie_cli if commande else '') }}">
+            </label>
+        </div>
+    </fieldset>
+
+    <!-- COMMANDE -->
+    <fieldset>
+        <legend>Commande</legend>
+
+        <div class="grid">
+            <label>Date commande *
+                <input type="date" name="date_commande" required
+                       value="{{ commande.date_commande if commande else today }}">
+            </label>
+            <label>Date limite
+                <input type="date" name="date_limite_commande"
+                       value="{{ commande.date_limite_commande if commande else '' }}">
+            </label>
+        </div>
+
+        <div class="grid">
+            <label>Type de travail
+                <select name="no_dossier">
+                    <option value="">-- Sélectionner --</option>
+                    {% for type in types_travail %}
+                        <option value="{{ type.no_dossier }}"
+                            {% if commande and commande.no_dossier == type.no_dossier %}selected{% endif %}>
+                            {{ type.type_travail }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>PO Client
+                <input type="text" name="po_client_commande"
+                       value="{{ commande.po_client_commande if commande else '' }}">
+            </label>
+        </div>
+
+        <label>Quantité *
+            <input type="number" name="quantite_commande" min="1" required
+                   value="{{ commande.quantite_commande if commande else '' }}">
+        </label>
+
+        <label>Notes commande
+            <textarea name="notes_commande" rows="2">{{ commande.notes_commande if commande else '' }}</textarea>
+        </label>
+    </fieldset>
+
+    <!-- IMPRESSION -->
+    <fieldset>
+        <legend>Impression</legend>
+
+        <label>
+            <input type="checkbox" name="est_une_impression" id="est_une_impression"
+                   {% if not commande or commande.est_une_impression %}checked{% endif %}>
+            Est une impression
+        </label>
+
+        <div id="section_impression">
+            <div class="grid">
+                <label>Type d'impression
+                    <input type="text" name="type_impression" list="liste_impression"
+                           value="{{ commande.type_impression if commande else '' }}">
+                    <datalist id="liste_impression">
+                        <option value="Numérique">
+                        <option value="Offset">
+                        <option value="Grand format">
+                    </datalist>
+                </label>
+                <label>Type de papier
+                    <input type="text" name="type_papier" list="liste_papier"
+                           value="{{ commande.type_papier if commande else '' }}">
+                    <datalist id="liste_papier">
+                        <option value="Couché 100 lbs">
+                        <option value="Carton 14pt">
+                        <option value="NCR 3 copies">
+                    </datalist>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Format final
+                    <input type="text" name="format_final_impression"
+                           value="{{ commande.format_final_impression if commande else '' }}">
+                </label>
+                <label>Format ouvert
+                    <input type="text" name="format_ouvert_impression"
+                           value="{{ commande.format_ouvert_impression if commande else '' }}">
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>
+                    <input type="radio" name="recto_verso_impression" value="false"
+                           {% if not commande or not commande.recto_verso_impression %}checked{% endif %}>
+                    Recto seul
+                </label>
+                <label>
+                    <input type="radio" name="recto_verso_impression" value="true"
+                           {% if commande and commande.recto_verso_impression %}checked{% endif %}>
+                    Recto / Verso
+                </label>
+            </div>
+
+            <div class="grid">
+                <label>Encre recto
+                    <select name="type_encre_recto">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="NB" {% if commande and commande.type_encre_recto == 'NB' %}selected{% endif %}>Noir (NB)</option>
+                        <option value="CMYK" {% if commande and commande.type_encre_recto == 'CMYK' %}selected{% endif %}>Couleur (CMYK)</option>
+                    </select>
+                </label>
+                <label>Encre verso
+                    <select name="type_encre_verso">
+                        <option value="">-- Aucun --</option>
+                        <option value="NB" {% if commande and commande.type_encre_verso == 'NB' %}selected{% endif %}>Noir (NB)</option>
+                        <option value="CMYK" {% if commande and commande.type_encre_verso == 'CMYK' %}selected{% endif %}>Couleur (CMYK)</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- FINITION -->
+    <fieldset>
+        <legend>Finition</legend>
+
+        <label>Type de finition
+            <select name="type_finition">
+                <option value="">-- Aucune --</option>
+                <option value="Plié" {% if commande and commande.type_finition == 'Plié' %}selected{% endif %}>Plié</option>
+                <option value="Broché" {% if commande and commande.type_finition == 'Broché' %}selected{% endif %}>Broché</option>
+                <option value="Laminé" {% if commande and commande.type_finition == 'Laminé' %}selected{% endif %}>Laminé</option>
+                <option value="Perforé" {% if commande and commande.type_finition == 'Perforé' %}selected{% endif %}>Perforé</option>
+                <option value="Numéroté" {% if commande and commande.type_finition == 'Numéroté' %}selected{% endif %}>Numéroté</option>
+            </select>
+        </label>
+
+        <div class="grid">
+            <label>Numérotation de
+                <input type="number" name="numerotage_finition_debut" min="1"
+                       value="{{ commande.numerotage_finition_debut if commande else '' }}">
+            </label>
+            <label>à
+                <input type="number" name="numerotage_finition_fin" min="1"
+                       value="{{ commande.numerotage_finition_fin if commande else '' }}">
+            </label>
+        </div>
+
+        <label>Notes finition
+            <textarea name="notes_finition" rows="2">{{ commande.notes_finition if commande else '' }}</textarea>
+        </label>
+    </fieldset>
+
+    <!-- SOUS-TRAITANT -->
+    <fieldset>
+        <legend>Sous-traitant</legend>
+
+        <div class="grid">
+            <label>Sous-traitant
+                <select name="no_sous_traitant">
+                    <option value="">-- Aucun --</option>
+                    {% for st in sous_traitants %}
+                        <option value="{{ st.no_sous_traitant }}"
+                            {% if commande and commande.no_sous_traitant == st.no_sous_traitant %}selected{% endif %}>
+                            {{ st.nom_sous_traitant }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>PO Sous-traitant
+                <input type="text" name="po_sous_traitant"
+                       value="{{ commande.po_sous_traitant if commande else '' }}">
+            </label>
+            <label>Coût ($)
+                <input type="number" name="cout_sous_traitant" step="0.01" min="0"
+                       value="{{ commande.cout_sous_traitant if commande else '' }}">
+            </label>
+        </div>
+    </fieldset>
+
+    <!-- COÛTS -->
+    <fieldset>
+        <legend>Coûts</legend>
+
+        <div class="grid">
+            <label>Coût commande * ($)
+                <input type="number" name="cout_commande" step="0.01" min="0" required
+                       value="{{ commande.cout_commande if commande else '' }}">
+            </label>
+            <label>Coût infographie ($)
+                <input type="number" name="cout_infographie" step="0.01" min="0"
+                       value="{{ commande.cout_infographie if commande else '' }}">
+            </label>
+        </div>
+    </fieldset>
+
+    <!-- LIVRAISONS -->
+    <fieldset>
+        <legend>Livraison(s)</legend>
+
+        {% if livraisons %}
+        <table>
+            <thead>
+                <tr><th>B/L</th><th>Date</th><th>Qté</th><th>Adresse</th><th>Coût</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for liv in livraisons %}
+                <tr>
+                    <td>{{ liv.no_bon_livraison }}</td>
+                    <td>{{ liv.date_livraison or '-' }}</td>
+                    <td>{{ liv.quantite_livraison }}</td>
+                    <td>{{ liv.adresse_livraison or '' }} {{ liv.ville_livraison or '' }}</td>
+                    <td>{{ "%.2f"|format(liv.cout_livraison or 0) }} $</td>
+                    <td><a href="{{ url_for('main.supprimer_livraison', no_livraison=liv.no_livraison) }}"
+                           onclick="return confirm('Supprimer?')">Supprimer</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+        {% endif %}
+
+        <p><strong>Ajouter une livraison</strong></p>
+        <div class="grid">
+            <label>Date <input type="date" name="livraison_date"></label>
+            <label>Quantité <input type="number" name="livraison_quantite" min="1"></label>
+            <label>Coût ($) <input type="number" name="livraison_cout" step="0.01" min="0" value="0"></label>
+        </div>
+        <label>Adresse <input type="text" name="livraison_adresse"></label>
+        <div class="grid">
+            <label>Ville <input type="text" name="livraison_ville"></label>
+            <label>Code postal <input type="text" name="livraison_code_postal"></label>
+        </div>
+        <label>Notes <input type="text" name="livraison_notes"></label>
+    </fieldset>
+
+    <!-- BOUTONS -->
+    <div class="grid">
+        <a href="{{ url_for('main.tableau_bord') }}" role="button" class="secondary outline">Annuler</a>
+        <button type="submit" name="action" value="enregistrer">Enregistrer</button>
+    </div>
+
+    {% if commande %}
+    <hr>
+    <div class="grid">
+        <button type="submit" name="action" value="completer" class="outline"
+                onclick="return confirm('Marquer comme complétée?')">Marquer complétée</button>
+        <button type="submit" name="action" value="supprimer" class="secondary outline"
+                onclick="return confirm('Supprimer définitivement?')">Supprimer</button>
+    </div>
+    {% endif %}
+
+</form>
+
+<script>
+const inputNom = document.getElementById('nom_compagnie_cli');
+const datalist = document.getElementById('liste_clients');
+const warningBox = document.getElementById('similariteWarning');
+const similariteList = document.getElementById('similariteList');
+let debounceTimer;
+
+// Autocomplétion client existant
+inputNom.addEventListener('change', function() {
+    for (let opt of datalist.querySelectorAll('option')) {
+        if (opt.value === this.value) {
+            document.getElementById('no_client').value = opt.dataset.no || '';
+            document.getElementById('prenom_contact_cli').value = opt.dataset.prenom || '';
+            document.getElementById('nom_contact_cli').value = opt.dataset.nom || '';
+            document.getElementById('adresse_compagnie_cli').value = opt.dataset.adresse || '';
+            document.getElementById('ville_compagnie_cli').value = opt.dataset.ville || '';
+            document.getElementById('code_postal_compagnie_cli').value = opt.dataset.cp || '';
+            document.getElementById('numero_telephone_compagnie_cli').value = opt.dataset.tel || '';
+            warningBox.classList.remove('show');
+            break;
+        }
+    }
+});
+
+// Vérification trigramme (similarité)
+inputNom.addEventListener('input', function() {
+    const nom = this.value.trim();
+    
+    // Vérifier si c'est un client existant
+    let found = false;
+    for (let opt of datalist.querySelectorAll('option')) {
+        if (opt.value === nom) { found = true; break; }
+    }
+    
+    if (found) {
+        document.getElementById('no_client').value = '';
+        warningBox.classList.remove('show');
+        return;
+    }
+    
+    document.getElementById('no_client').value = '';
+    
+    // Debounce pour éviter trop de requêtes
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        if (nom.length >= 3) {
+            fetch('/api/verifier-client', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom: nom })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.similaires && data.similaires.length > 0) {
+                    similariteList.innerHTML = data.similaires.map(s => `
+                        <div class="similarite-item">
+                            <span>${s.nom_compagnie_cli} (${Math.round(s.similarite * 100)}%)</span>
+                            <button type="button" onclick="selectClient(${s.no_client}, '${s.nom_compagnie_cli}')">Utiliser</button>
+                        </div>
+                    `).join('');
+                    warningBox.classList.add('show');
+                } else {
+                    warningBox.classList.remove('show');
+                }
+            });
+        } else {
+            warningBox.classList.remove('show');
+        }
+    }, 300);
+});
+
+function selectClient(noClient, nomCompagnie) {
+    // Chercher dans la datalist et remplir
+    for (let opt of datalist.querySelectorAll('option')) {
+        if (opt.dataset.no == noClient) {
+            inputNom.value = opt.value;
+            document.getElementById('no_client').value = opt.dataset.no || '';
+            document.getElementById('prenom_contact_cli').value = opt.dataset.prenom || '';
+            document.getElementById('nom_contact_cli').value = opt.dataset.nom || '';
+            document.getElementById('adresse_compagnie_cli').value = opt.dataset.adresse || '';
+            document.getElementById('ville_compagnie_cli').value = opt.dataset.ville || '';
+            document.getElementById('code_postal_compagnie_cli').value = opt.dataset.cp || '';
+            document.getElementById('numero_telephone_compagnie_cli').value = opt.dataset.tel || '';
+            break;
+        }
+    }
+    warningBox.classList.remove('show');
+}
+
+// Toggle section impression
+const checkImp = document.getElementById('est_une_impression');
+const secImp = document.getElementById('section_impression');
+secImp.style.display = checkImp.checked ? 'block' : 'none';
+checkImp.addEventListener('change', function() {
+    secImp.style.display = this.checked ? 'block' : 'none';
+});
+</script>
+
+{% endblock %}

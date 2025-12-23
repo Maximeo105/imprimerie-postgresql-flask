@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Clients - Imprimerie Mosaïque{% endblock %}
+
+{% block content %}
+<h2>Clients</h2>
+
+<form method="get" role="search">
+    <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+        <input type="search" name="recherche" placeholder="Rechercher..." value="{{ recherche }}" style="flex: 1;">
+        <button type="submit" style="width: auto; padding: 0.5rem 1rem; margin: 0;">Rechercher</button>
+        {% if recherche %}
+            <a href="{{ url_for('main.clients') }}" role="button" class="secondary outline" 
+               style="width: auto; padding: 0.5rem 1rem; margin: 0;">Effacer</a>
+        {% endif %}
+    </div>
+</form>
+
+<hr>
+
+<details>
+    <summary><strong>Ajouter un client</strong></summary>
+    <form method="post" action="{{ url_for('main.client_nouveau') }}">
+        <label>Nom Compagnie * <input type="text" name="nom_compagnie_cli" required></label>
+        <div class="grid">
+            <label>Prénom contact <input type="text" name="prenom_contact_cli"></label>
+            <label>Nom contact <input type="text" name="nom_contact_cli"></label>
+        </div>
+        <label>Adresse <input type="text" name="adresse_compagnie_cli"></label>
+        <div class="grid">
+            <label>Ville <input type="text" name="ville_compagnie_cli"></label>
+            <label>Code postal <input type="text" name="code_postal_compagnie_cli"></label>
+            <label>Téléphone <input type="tel" name="numero_telephone_compagnie_cli"></label>
+        </div>
+        <button type="submit">Ajouter</button>
+    </form>
+</details>
+
+<hr>
+
+{% if clients %}
+<table>
+    <thead>
+        <tr>
+            <th>N°</th>
+            <th>Compagnie</th>
+            <th>Contact</th>
+            <th>Ville</th>
+            <th>Téléphone</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for client in clients %}
+        <tr>
+            <td>{{ client.no_client }}</td>
+            <td><strong>{{ client.nom_compagnie_cli }}</strong></td>
+            <td>{{ client.prenom_contact_cli or '' }} {{ client.nom_contact_cli or '' }}</td>
+            <td>{{ client.ville_compagnie_cli or '-' }}</td>
+            <td>{{ client.numero_telephone_compagnie_cli or '-' }}</td>
+            <td style="white-space: nowrap;">
+                <a href="{{ url_for('main.client_detail', no_client=client.no_client) }}">Voir</a>
+                &nbsp;|&nbsp;
+                <form method="post" action="{{ url_for('main.client_supprimer', no_client=client.no_client) }}" 
+                      style="display: inline;" onsubmit="return confirm('Supprimer ce client?')">
+                    <button type="submit" class="secondary outline" 
+                            style="padding: 0.2rem 0.5rem; font-size: 0.75rem; width: auto;">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Aucun client.</p>
+{% endif %}
+
+{% endblock %}
+
+
+<!-- AJOUTER LE BOUTON DELETE POUR DELETE UN CLIENT -->

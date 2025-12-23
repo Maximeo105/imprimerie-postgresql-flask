@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}#{{ commande.no_commande }} - {{ commande.nom_compagnie_cli }}{% endblock %}
+
+{% block content %}
+<style>
+    @media print {
+        @page { margin: 1cm; size: A4; }
+        body { font-size: 11pt; }
+        .bon-travail { padding: 0; }
+        .statut-badge { display: none !important; }
+    }
+    
+    .bon-travail { max-width: 800px; margin: 0 auto; }
+    
+    .bon-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start;
+        border-bottom: 3px solid var(--primary);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+    .bon-header .logo-section img { height: 60px; }
+    .bon-header .logo-section { text-align: left; }
+    .bon-header .titre-section { text-align: right; }
+    .bon-header .titre-section h1 { 
+        margin: 0; 
+        font-size: 1.5rem; 
+        color: var(--primary);
+    }
+    .bon-header .titre-section .numero { 
+        font-size: 2rem; 
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .section { margin-bottom: 0.75rem; }
+    .section-title { 
+        font-weight: 600; 
+        font-size: 0.9rem;
+        color: var(--primary);
+        border-bottom: 1px solid #dee2e6; 
+        padding-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .info-table td { padding: 0.2rem 0.5rem; vertical-align: top; }
+    .info-table .label { font-weight: 600; color: #555; width: 120px; }
+    .info-table .value { color: #333; }
+    
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    
+    .notes-box { 
+        background: #f8f9fa; 
+        padding: 0.5rem; 
+        border-radius: 4px; 
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    
+    .cout-total { 
+        text-align: right; 
+        font-size: 1.1rem; 
+        font-weight: bold;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .statut-badge {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .statut-en-cours { background: #fdebd0; color: #9c640c; }
+    .statut-completee { background: #d5f5e3; color: #1e8449; }
+    .statut-annulee { background: #fadbd8; color: #922b21; }
+    
+    .livraisons-table { font-size: 0.8rem; }
+    .livraisons-table th { background: #f8f9fa; padding: 0.3rem 0.5rem; }
+    .livraisons-table td { padding: 0.3rem 0.5rem; }
+    
+    .actions-bar { 
+        display: flex; 
+        gap: 1rem; 
+        justify-content: space-between;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+
+<div class="bon-travail">
+    <!-- EN-TÊTE -->
+    <div class="bon-header">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Imprimerie Mosaïque">
+        </div>
+        <div class="titre-section">
+            <h1>BON DE TRAVAIL</h1>
+            <div class="numero">#{{ commande.no_commande }}</div>
+            <span class="statut-badge statut-{{ commande.statut_commande|lower|replace('_', '-') }}">
+                {% if commande.statut_commande == 'EN_COURS' %}En cours
+                {% elif commande.statut_commande == 'COMPLETEE' %}Complétée
+                {% else %}Annulée{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <!-- COLONNE GAUCHE -->
+        <div>
+            <!-- CLIENT -->
+            <div class="section">
+                <div class="section-title">Client</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Compagnie</td>
+                        <td class="value"><strong>{{ commande.nom_compagnie_cli }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Contact</td>
+                        <td class="value">{{ commande.prenom_contact_cli or '' }} {{ commande.nom_contact_cli or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Adresse</td>
+                        <td class="value">{{ commande.adresse_compagnie_cli or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Ville</td>
+                        <td class="value">{{ commande.ville_compagnie_cli or '' }} {{ commande.code_postal_compagnie_cli or '' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Téléphone</td>
+                        <td class="value">{{ commande.numero_telephone_compagnie_cli or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- COMMANDE -->
+            <div class="section">
+                <div class="section-title">Commande</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Date commande</td>
+                        <td class="value">{{ commande.date_commande }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Date limite</td>
+                        <td class="value">{{ commande.date_limite_commande or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Type de travail</td>
+                        <td class="value">{{ commande.type_travail or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">PO Client</td>
+                        <td class="value">{{ commande.po_client_commande or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Quantité</td>
+                        <td class="value"><strong>{{ commande.quantite_commande }}</strong></td>
+                    </tr>
+                </table>
+                {% if commande.notes_commande %}
+                <div class="notes-box"><strong>Notes:</strong> {{ commande.notes_commande }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE -->
+        <div>
+            {% if commande.est_une_impression %}
+            <!-- IMPRESSION -->
+            <div class="section">
+                <div class="section-title">Impression</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Type</td>
+                        <td class="value">{{ commande.type_impression or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Papier</td>
+                        <td class="value">{{ commande.type_papier or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Format final</td>
+                        <td class="value">{{ commande.format_final_impression or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Format ouvert</td>
+                        <td class="value">{{ commande.format_ouvert_impression or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Recto/Verso</td>
+                        <td class="value">{{ 'Recto/Verso' if commande.recto_verso_impression else 'Recto seul' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Encre recto</td>
+                        <td class="value">{{ commande.type_encre_recto or '-' }}</td>
+                    </tr>
+                    {% if commande.recto_verso_impression %}
+                    <tr>
+                        <td class="label">Encre verso</td>
+                        <td class="value">{{ commande.type_encre_verso or '-' }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            {% endif %}
+
+            {% if commande.type_finition %}
+            <!-- FINITION -->
+            <div class="section">
+                <div class="section-title">Finition</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Type</td>
+                        <td class="value">{{ commande.type_finition }}</td>
+                    </tr>
+                    {% if commande.numerotage_finition_debut %}
+                    <tr>
+                        <td class="label">Numérotation</td>
+                        <td class="value">{{ commande.numerotage_finition_debut }} à {{ commande.numerotage_finition_fin }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                {% if commande.notes_finition %}
+                <div class="notes-box">{{ commande.notes_finition }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if commande.no_sous_traitant %}
+            <!-- SOUS-TRAITANT -->
+            <div class="section">
+                <div class="section-title">Sous-traitant</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Nom</td>
+                        <td class="value">{{ commande.nom_sous_traitant }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">PO</td>
+                        <td class="value">{{ commande.po_sous_traitant or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- COÛTS -->
+            <div class="section">
+                <div class="section-title">Coûts</div>
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Commande</td>
+                        <td class="value">{{ "%.2f"|format(commande.cout_commande or 0) }} $</td>
+                    </tr>
+                    {% if commande.cout_infographie %}
+                    <tr>
+                        <td class="label">Infographie</td>
+                        <td class="value">{{ "%.2f"|format(commande.cout_infographie) }} $</td>
+                    </tr>
+                    {% endif %}
+                    {% if commande.cout_sous_traitant %}
+                    <tr>
+                        <td class="label">Sous-traitant</td>
+                        <td class="value">{{ "%.2f"|format(commande.cout_sous_traitant) }} $</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                <div class="cout-total">TOTAL: {{ "%.2f"|format(cout_total) }} $</div>
+            </div>
+        </div>
+    </div>
+
+    {% if livraisons %}
+    <!-- LIVRAISONS -->
+    <div class="section">
+        <div class="section-title">Livraisons</div>
+        <table class="livraisons-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>B/L</th>
+                    <th>Date</th>
+                    <th>Qté</th>
+                    <th>Adresse</th>
+                    <th>Coût</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for liv in livraisons %}
+                <tr>
+                    <td>{{ liv.no_bon_livraison }}</td>
+                    <td>{{ liv.date_livraison or '-' }}</td>
+                    <td>{{ liv.quantite_livraison }}</td>
+                    <td>{{ liv.adresse_livraison or '' }} {{ liv.ville_livraison or '' }}</td>
+                    <td>{{ "%.2f"|format(liv.cout_livraison or 0) }} $</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- ACTIONS -->
+    <div class="actions-bar no-print">
+        <a href="{{ url_for('main.tableau_bord') }}" role="button" class="secondary outline">Retour</a>
+        <div>
+            <a href="{{ url_for('main.commande_modifier', no_commande=commande.no_commande) }}" role="button" class="secondary">Modifier</a>
+            <button onclick="imprimerBon()" class="btn-primary">Imprimer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function imprimerBon() {
+    // Changer le titre du document pour le nom du fichier PDF
+    var originalTitle = document.title;
+    document.title = '#{{ commande.no_commande }} - {{ commande.nom_compagnie_cli }}';
+    window.print();
+    document.title = originalTitle;
+}
+</script>
+
+{% endblock %}

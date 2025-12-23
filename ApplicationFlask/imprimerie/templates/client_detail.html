@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ client.nom_compagnie_cli }} - Imprimerie Mosaïque{% endblock %}
+
+{% block content %}
+<h2>{{ client.nom_compagnie_cli }}</h2>
+<p style="color: #6c757d;">Client N° {{ client.no_client }}</p>
+
+<div class="card">
+    <div class="grid">
+        <div>
+            <strong>Contact:</strong><br>
+            {{ client.prenom_contact_cli or '' }} {{ client.nom_contact_cli or '-' }}
+        </div>
+        <div>
+            <strong>Téléphone:</strong><br>
+            {{ client.numero_telephone_compagnie_cli or '-' }}
+        </div>
+    </div>
+    <hr>
+    <strong>Adresse:</strong><br>
+    {{ client.adresse_compagnie_cli or '-' }}<br>
+    {{ client.ville_compagnie_cli or '' }} {{ client.code_postal_compagnie_cli or '' }}
+</div>
+
+<h3>Commandes ({{ commandes|length }})</h3>
+
+{% if commandes %}
+<table>
+    <thead>
+        <tr>
+            <th>N°</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Qté</th>
+            <th>Coût</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cmd in commandes %}
+        <tr>
+            <td>{{ cmd.no_commande }}</td>
+            <td>{{ cmd.date_commande }}</td>
+            <td>{{ cmd.type_travail or '-' }}</td>
+            <td>{{ cmd.quantite_commande }}</td>
+            <td>{{ "%.2f"|format(cmd.cout_commande or 0) }} $</td>
+            <td>
+                {% if cmd.statut_commande == 'EN_COURS' %}
+                    <span class="badge badge-warning">En cours</span>
+                {% elif cmd.statut_commande == 'COMPLETEE' %}
+                    <span class="badge badge-success">Complétée</span>
+                {% else %}
+                    <span class="badge badge-danger">Annulée</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Aucune commande pour ce client.</p>
+{% endif %}
+
+<hr>
+<div class="grid">
+    <a href="{{ url_for('main.clients') }}" role="button" class="secondary outline">Retour aux clients</a>
+    <a href="{{ url_for('main.commande_nouveau', client=client.no_client) }}" role="button">Nouvelle commande pour ce client</a>
+</div>
+
+{% endblock %}

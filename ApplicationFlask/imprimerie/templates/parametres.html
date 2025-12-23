@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - Imprimerie Mosaïque{% endblock %}
+
+{% block content %}
+<h2>Paramètres</h2>
+
+<div class="grid">
+    <div class="card">
+        <div class="card-header">Types de travail</div>
+        
+        <form method="post">
+            <div class="grid">
+                <input type="text" name="type_travail" placeholder="Nouveau type..." required>
+                <button type="submit" name="action" value="ajouter_type">Ajouter</button>
+            </div>
+        </form>
+        
+        <hr>
+        
+        {% if types_travail %}
+        <ul>
+            {% for type in types_travail %}
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0;">
+                {{ type.type_travail }}
+                <form method="post" style="margin: 0;">
+                    <input type="hidden" name="no_dossier" value="{{ type.no_dossier }}">
+                    <button type="submit" name="action" value="supprimer_type" class="secondary outline"
+                            onclick="return confirm('Supprimer?')"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Supprimer</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Aucun type.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">Sous-traitants</div>
+        
+        <form method="post">
+            <div class="grid">
+                <input type="text" name="nom_sous_traitant" placeholder="Nouveau sous-traitant..." required>
+                <button type="submit" name="action" value="ajouter_sous_traitant">Ajouter</button>
+            </div>
+        </form>
+        
+        <hr>
+        
+        {% if sous_traitants %}
+        <ul>
+            {% for st in sous_traitants %}
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0;">
+                {{ st.nom_sous_traitant }}
+                <form method="post" style="margin: 0;">
+                    <input type="hidden" name="no_sous_traitant" value="{{ st.no_sous_traitant }}">
+                    <button type="submit" name="action" value="supprimer_sous_traitant" class="secondary outline"
+                            onclick="return confirm('Supprimer?')"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Supprimer</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Aucun sous-traitant.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+
+<!-- RAJOUTER ma fonction d'archivage --->
