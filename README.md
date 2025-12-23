@@ -48,3 +48,11 @@ python -m venv venv
 # Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
 python app.py
+
+
+## Avis
+
+- Les données utilisées dans ce projet sont fictives et servent uniquement à des fins de démonstration.
+- Je n’autorise pas l’utilisation, la copie, la modification ou la redistribution du code de ce dépôt sans mon autorisation écrite.
+
+
