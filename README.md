@@ -3,7 +3,7 @@
 Ce projet consiste à créer une application de gestion des commandes pour une petite entreprise (imprimerie).
 
 ## Démo
-<img src="docs/PresentationDuProgramme.gif" width="900" />
+<img src="PresentationDuProgramme.gif" width="900" />
 
 ## Étapes du projet
 
