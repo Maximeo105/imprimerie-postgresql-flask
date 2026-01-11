@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ client.nom_compagnie_cli }} - Imprimerie Mosaïque{% endblock %}
+
+{% block content %}
+<form method="post" action="{{ url_for('main.client_modifier', no_client=client.no_client) }}">
+    <h2>Modifier: {{ client.nom_compagnie_cli }}</h2>
+    <p style="color: #6c757d;">Client N° {{ client.no_client }}</p>
+
+    <div class="card">
+        <label>Nom Compagnie *
+            <input type="text" name="nom_compagnie_cli" required
+                   value="{{ client.nom_compagnie_cli }}">
+        </label>
+
+        <div class="grid">
+            <label>Prénom contact
+                <input type="text" name="prenom_contact_cli"
+                       value="{{ client.prenom_contact_cli or '' }}">
+            </label>
+            <label>Nom contact
+                <input type="text" name="nom_contact_cli"
+                       value="{{ client.nom_contact_cli or '' }}">
+            </label>
+        </div>
+
+        <label>Adresse
+            <input type="text" name="adresse_compagnie_cli"
+                   value="{{ client.adresse_compagnie_cli or '' }}">
+        </label>
+
+        <div class="grid">
+            <label>Ville
+                <input type="text" name="ville_compagnie_cli"
+                       value="{{ client.ville_compagnie_cli or '' }}">
+            </label>
+            <label>Code postal
+                <input type="text" name="code_postal_compagnie_cli"
+                       value="{{ client.code_postal_compagnie_cli or '' }}">
+            </label>
+            <label>Téléphone
+                <input type="tel" name="numero_telephone_compagnie_cli"
+                       value="{{ client.numero_telephone_compagnie_cli or '' }}">
+            </label>
+        </div>
+
+        <hr>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <a href="{{ url_for('main.client_detail', no_client=client.no_client) }}"
+               role="button" class="secondary outline"
+               style="width: 100%; text-align: center; margin: 0;">Annuler</a>
+            <button type="submit" style="margin: 0;">Sauvegarder</button>
+        </div>
+    </div>
+</form>
+
+
+<h3>Commandes ({{ commandes|length }})</h3>
+
+{% if commandes %}
+<table>
+    <thead>
+        <tr>
+            <th>N°</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Qté</th>
+            <th>Coût</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cmd in commandes %}
+        <tr>
+            <td>{{ cmd.no_commande }}</td>
+            <td>{{ cmd.date_commande }}</td>
+            <td>{{ cmd.type_travail or '-' }}</td>
+            <td>{{ cmd.quantite_commande }}</td>
+            <td>{{ "%.2f"|format(cmd.cout_commande or 0) }} $</td>
+            <td>
+                {% if cmd.statut_commande == 'EN_COURS' %}
+                    <span class="badge badge-warning">En cours</span>
+                {% elif cmd.statut_commande == 'COMPLETEE' %}
+                    <span class="badge badge-success">Complétée</span>
+                {% else %}
+                    <span class="badge badge-danger">Annulée</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Aucune commande pour ce client.</p>
+{% endif %}
+
+<hr>
+<div class="grid">
+    <a href="{{ url_for('main.clients') }}" role="button" class="secondary outline">Retour aux clients</a>
+    <a href="{{ url_for('main.commande_nouveau', client=client.no_client) }}" role="button">Nouvelle commande pour ce client</a>
+</div>
+
+{% endblock %}
+
+

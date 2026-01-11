@@ -11,33 +11,10 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/tableau-de-bord')
 def tableau_bord():
-    recherche = request.args.get('recherche', '').strip()
-    
-    if recherche:
-        # Recherche par nom client OU par numéro de commande   #RAJOUTER LE NO_CLIENT dans le "where" des mes tables
-        sql_retard = """
-            select * from COMMANDE_EN_RETARD 
-            where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
-            order by DATE_LIMITE_COMMANDE
-        """
-        sql_en_cours = """
-            select * from COMMANDE_EN_COURS 
-            where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
-            order by DATE_LIMITE_COMMANDE nulls last
-        """
-        sql_completee= """
-        select * from COMMANDE_COMPLETEE 
-        where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
-        order by DATE_LIMITE_COMMANDE nulls last
-        """
-        params = (f'%{recherche}%', recherche, recherche)
-        commandes_retard = execute_query(sql_retard, params)
-        commandes_en_cours = execute_query(sql_en_cours, params)    #VA FALLOIR AJOUTER MES COMMANDE_ANNULEE aussi ET archivees plus tard lorsque créer
-        commandes_completee = execute_query(sql_completee, params)  #VA FALLOIR QUE JE PLACE CELA QUELQUE PART ou que je fasse une page à Part RECHERCHE, car actuellement on redirige au tableau de bord
-    else:
-        commandes_retard = execute_query("select * from COMMANDE_EN_RETARD order by DATE_LIMITE_COMMANDE")
-        commandes_en_cours = execute_query("select * from COMMANDE_EN_COURS order by DATE_LIMITE_COMMANDE nulls last")
-    
+
+    commandes_retard = execute_query("select * from COMMANDE_EN_RETARD order by DATE_LIMITE_COMMANDE")
+    commandes_en_cours = execute_query("select * from COMMANDE_EN_COURS order by DATE_LIMITE_COMMANDE nulls last")
+
     stats = {
         'nb_retard': len(commandes_retard),
         'nb_en_cours': len(commandes_en_cours)
@@ -47,7 +24,50 @@ def tableau_bord():
                           commandes_retard=commandes_retard,
                           commandes_en_cours=commandes_en_cours,
                           stats=stats,
-                          recherche=recherche)
+                          recherche='')
+
+@main_bp.route('/recherche', methods=['GET', 'POST'])
+def recherche():
+    recherche = request.args.get('recherche', "").strip()
+
+    sql_retard = """
+               select * from COMMANDE_EN_RETARD 
+               where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
+               order by DATE_LIMITE_COMMANDE
+           """
+    sql_en_cours = """
+               select * from COMMANDE_EN_COURS 
+               where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
+               order by DATE_LIMITE_COMMANDE nulls last
+           """
+    sql_completee = """
+           select * from COMMANDE_COMPLETEE 
+           where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
+           order by DATE_LIMITE_COMMANDE nulls last
+           """
+    sql_annulee = """
+        select * from COMMANDE_ANNULEE
+        where nom_compagnie_cli ilike %s or cast(NO_COMMANDE as text) = %s or cast(NO_CLIENT as text) = %s
+         order by DATE_LIMITE_COMMANDE nulls last
+        """
+    params = (f'%{recherche}%', recherche, recherche)
+    recherche_commandes_retard = execute_query(sql_retard, params)
+    recherche_commandes_en_cours = execute_query(sql_en_cours, params)  # VA FALLOIR AJOUTER MES COMMANDE_ANNULEE aussi
+    recherche_commandes_completees = execute_query(sql_completee, params)
+    recherche_commandes_annulees = execute_query(sql_annulee, params)
+
+    recherche_stats = {
+        'nb_retard': len(recherche_commandes_retard),
+        'nb_en_cours': len(recherche_commandes_en_cours)
+    }
+
+    return render_template('recherche.html',
+                           recherche_commandes_retard=recherche_commandes_retard,
+                           recherche_commandes_en_cours=recherche_commandes_en_cours,
+                           recherche_commandes_completees=recherche_commandes_completees,
+                           recherche_commandes_annulees=recherche_commandes_annulees,
+                           recherche_stats=recherche_stats,
+                           recherche=recherche)
 
 
 @main_bp.route('/commande/<int:no_commande>/completer', methods=['POST'])
@@ -141,7 +161,7 @@ def commande_modifier(no_commande):
                 flash("Commande supprimée.", "success")
                 return redirect(url_for('main.tableau_bord'))
             
-            if action == 'completer':
+            if action == 'completer':   #VERIFIER QUE C'EST LE BON NOM D'ACTION
                 execute_update("update COMMANDE set STATUT_COMMANDE = 'COMPLETEE' where NO_COMMANDE = %s", (no_commande,))
                 flash("Commande marquée comme complétée.", "success")
                 return redirect(url_for('main.tableau_bord'))
@@ -505,3 +525,57 @@ def parametres():
     sous_traitants = execute_query("select * from SOUS_TRAITANT order by NOM_SOUS_TRAITANT")
     
     return render_template('parametres.html', types_travail=types_travail, sous_traitants=sous_traitants)
+
+
+@main_bp.route('/client/<int:no_client>/modifier', methods=['GET', 'POST'])
+def client_modifier(no_client):  # ✅ Bon nom de paramètre
+
+    # Si formulaire soumis (POST)
+    if request.method == 'POST':
+        try:
+            form = request.form
+            sql = """
+                UPDATE CLIENT SET
+                    NOM_COMPAGNIE_CLI = %s,
+                    PRENOM_CONTACT_CLI = %s,
+                    NOM_CONTACT_CLI = %s,
+                    ADRESSE_COMPAGNIE_CLI = %s,
+                    VILLE_COMPAGNIE_CLI = %s,
+                    CODE_POSTAL_COMPAGNIE_CLI = %s,
+                    NUMERO_TELEPHONE_COMPAGNIE_CLI = %s
+                WHERE NO_CLIENT = %s
+            """
+            execute_update(sql, (
+                form.get('nom_compagnie_cli'),
+                form.get('prenom_contact_cli') or None,
+                form.get('nom_contact_cli') or None,
+                form.get('adresse_compagnie_cli') or None,
+                form.get('ville_compagnie_cli') or None,
+                form.get('code_postal_compagnie_cli') or None,
+                form.get('numero_telephone_compagnie_cli') or None,
+                no_client
+            ))
+            flash("Client modifié.", "success")
+            return redirect(url_for('main.client_detail', no_client=no_client))
+        except DatabaseError as e:
+            flash(str(e), "danger")
+
+    # Charger les données du client (GET)
+    client = execute_query_one("SELECT * FROM CLIENT WHERE NO_CLIENT = %s", (no_client,))
+
+    if not client:
+        flash("Client introuvable.", "danger")
+        return redirect(url_for('main.clients'))
+
+    # Charger les commandes du client
+    commandes = execute_query("""
+        SELECT CMD.*, TRA.TYPE_TRAVAIL
+        FROM COMMANDE CMD
+        LEFT JOIN TYPE_TRAVAIL TRA ON CMD.NO_DOSSIER = TRA.NO_DOSSIER
+        WHERE CMD.NO_CLIENT = %s
+        ORDER BY CMD.DATE_COMMANDE DESC
+    """, (no_client,))
+
+    return render_template('clients_modification.html',
+                           client=client,
+                           commandes=commandes)

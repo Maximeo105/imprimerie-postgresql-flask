@@ -18,10 +18,20 @@
         </div>
     </div>
     <hr>
-    <strong>Adresse:</strong><br>
-    {{ client.adresse_compagnie_cli or '-' }}<br>
-    {{ client.ville_compagnie_cli or '' }} {{ client.code_postal_compagnie_cli or '' }}
+    <div class="grid">
+        <div>
+            <strong>Adresse:</strong><br>
+            {{ client.adresse_compagnie_cli or '-' }}<br>
+            {{ client.ville_compagnie_cli or '' }} {{ client.code_postal_compagnie_cli or '' }}
+        </div>
+        <div>
+            <a href="{{ url_for('main.client_modifier', no_client=client.no_client) }}"
+            role="button" class="no-print">Modifier</a>
+        </div>
+    </div>
 </div>
+
+
 
 <h3>Commandes ({{ commandes|length }})</h3>
 

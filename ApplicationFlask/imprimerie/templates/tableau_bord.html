@@ -5,7 +5,7 @@
 {% block content %}
 <h2>Tableau de bord</h2>
 
-<form method="get" role="search" class="no-print">
+<form method="get" action="{{ url_for('main.recherche') }}" role="search" class="no-print">
     <div style="display: flex; gap: 0.5rem; align-items: stretch;">
         <input type="search" name="recherche" placeholder="Rechercher par client ou n° commande..." 
                value="{{ recherche }}" style="flex: 1; margin: 0;">

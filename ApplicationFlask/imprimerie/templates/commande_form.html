@@ -327,9 +327,10 @@
     </fieldset>
 
     <!-- BOUTONS -->
-    <div class="grid">
-        <a href="{{ url_for('main.tableau_bord') }}" role="button" class="secondary outline">Annuler</a>
-        <button type="submit" name="action" value="enregistrer">Enregistrer</button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <a href="..." role="button" class="secondary outline"
+           style="width: 100%; text-align: center; margin: 0;">Annuler</a>
+        <button type="submit" style="margin: 0;">Enregistrer</button>
     </div>
 
     {% if commande %}
@@ -337,6 +338,8 @@
     <div class="grid">
         <button type="submit" name="action" value="completer" class="outline"
                 onclick="return confirm('Marquer comme complétée?')">Marquer complétée</button>
+        <button type="submit" name="action" value="annuler" class="secondary outline"
+            onclick="return confirm('Annuler cette commande?')">Annuler la commande</button>
         <button type="submit" name="action" value="supprimer" class="secondary outline"
                 onclick="return confirm('Supprimer définitivement?')">Supprimer</button>
     </div>

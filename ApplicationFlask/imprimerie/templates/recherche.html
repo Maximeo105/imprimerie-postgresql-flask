@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Résultat recherche - Imprimerie Mosaïque{% endblock %}
+
+{% block content %}
+<h2>Résultat recherche</h2>
+
+<form method="get" role="search" class="no-print">
+    <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+        <input type="search" name="recherche" placeholder="Rechercher par client ou n° commande..."
+               value="{{ recherche }}" style="flex: 1; margin: 0;">
+        <button type="submit" style="width: auto; padding: 0.5rem 1rem; margin: 0;">Rechercher</button>
+        {% if recherche %}
+            <a href="{{ url_for('main.tableau_bord') }}" role="button" class="secondary outline"
+               style="width: auto; padding: 0.5rem 1rem; margin: 0;">Effacer</a>
+        {% endif %}
+    </div>
+</form>
+
+<div class="stats-grid no-print">
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--danger);">{{ recherche_stats.nb_retard }}</div>
+        <div class="stat-label">En retard</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--warning);">{{ recherche_stats.nb_en_cours }}</div>
+        <div class="stat-label">En cours</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ recherche_stats.nb_retard + recherche_stats.nb_en_cours }}</div>
+        <div class="stat-label">Total</div>
+    </div>
+</div>
+
+
+{% if recherche_commandes_retard %}
+<div class="card">
+    <div class="card-header" style="color: var(--danger);">Commandes en retard ({{ recherche_commandes_retard|length }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Qté</th>
+                <th>Date limite</th>
+                <th>Coût</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cmd in recherche_commandes_retard %}
+            <tr>
+                <td>{{ cmd.no_commande }}</td>
+                <td>{{ cmd.nom_compagnie_cli }}</td>
+                <td>{{ cmd.type_travail or '-' }}</td>
+                <td>{{ cmd.quantite_commande }}</td>
+                <td><span class="badge badge-danger">{{ cmd.date_limite_commande }}</span></td>
+                <td>{{ "%.2f"|format(cmd.cout_total_commande or 0) }} $</td>
+                <td style="white-space: nowrap;">
+                    <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+                    &nbsp;|&nbsp;
+                    <a href="{{ url_for('main.commande_modifier', no_commande=cmd.no_commande) }}">Modifier</a>
+                    &nbsp;|&nbsp;
+                    <form method="post" action="{{ url_for('main.commande_completer_rapide', no_commande=cmd.no_commande) }}"
+                          style="display: inline;" onsubmit="return confirm('Marquer comme complétée?')">
+                        <button type="submit" class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; width: auto;">Complétée</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">Commandes en cours ({{ recherche_commandes_en_cours|length }})</div>
+    {% if recherche_commandes_en_cours %}
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Qté</th>
+                <th>Date limite</th>
+                <th>Coût</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cmd in recherche_commandes_en_cours %}
+            <tr>
+                <td>{{ cmd.no_commande }}</td>
+                <td>{{ cmd.nom_compagnie_cli }}</td>
+                <td>{{ cmd.type_travail or '-' }}</td>
+                <td>{{ cmd.quantite_commande }}</td>
+                <td>
+                    {% if cmd.date_limite_commande %}
+                        <span class="badge badge-warning">{{ cmd.date_limite_commande }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(cmd.cout_total_commande or 0) }} $</td>
+                <td style="white-space: nowrap;">
+                    <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+                    &nbsp;|&nbsp;
+                    <a href="{{ url_for('main.commande_modifier', no_commande=cmd.no_commande) }}">Modifier</a>
+                    &nbsp;|&nbsp;
+                    <form method="post" action="{{ url_for('main.commande_completer_rapide', no_commande=cmd.no_commande) }}"
+                          style="display: inline;" onsubmit="return confirm('Marquer comme complétée?')">
+                        <button type="submit" class="outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; width:auto;">Complétée</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune commande en cours.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">Commandes Complétées ({{ recherche_commandes_completees|length }})</div>
+{% if recherche_commandes_completees %}
+     <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Qté</th>
+                <th>Date limite</th>
+                <th>Coût</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cmd in recherche_commandes_completees %}
+            <tr>
+                <td>{{ cmd.no_commande }}</td>
+                <td>{{ cmd.nom_compagnie_cli }}</td>
+                <td>{{ cmd.type_travail or '-' }}</td>
+                <td>{{ cmd.quantite_commande }}</td>
+                <td>
+                    {% if cmd.date_limite_commande %}
+                        <span class="badge badge-warning">{{ cmd.date_limite_commande }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(cmd.cout_total_commande or 0) }} $</td>
+                <td style="white-space: nowrap;">
+                    <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+                    &nbsp;|&nbsp;
+                    <a href="{{ url_for('main.commande_modifier', no_commande=cmd.no_commande) }}">Modifier</a>
+                    &nbsp;|&nbsp;
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune commande complétée.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">Commandes annulées ({{ recherche_commandes_annulees|length }})</div>
+    {% if recherche_commandes_annulees %}
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Qté</th>
+                <th>Date limite</th>
+                <th>Coût</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cmd in recherche_commandes_annulees %}
+            <tr>
+                <td>{{ cmd.no_commande }}</td>
+                <td>{{ cmd.nom_compagnie_cli }}</td>
+                <td>{{ cmd.type_travail or '-' }}</td>
+                <td>{{ cmd.quantite_commande }}</td>
+                <td>
+                    {% if cmd.date_limite_commande %}
+                        <span class="badge badge-warning">{{ cmd.date_limite_commande }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(cmd.cout_total_commande or 0) }} $</td>
+                <td style="white-space: nowrap;">
+                    <a href="{{ url_for('main.commande_details', no_commande=cmd.no_commande) }}">Détails</a>
+                    &nbsp;|&nbsp;
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune commande annulee.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
