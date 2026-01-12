@@ -375,6 +375,15 @@ create index IDX_SOUS_TRAITANT_NOM_TRGM on SOUS_TRAITANT using gin (NOM_SOUS_TRA
 create index IDX_TYPE_TRAVAIL on TYPE_TRAVAIL using gin (TYPE_TRAVAIL gin_trgm_ops);
 
 
+-- ============= --
+-- MODIFICATIONS --
+-- ============= --
+
+-- J'enleve l'auto-generation du NO_BON_LIVRAISON
+alter table LIVRAISON
+alter column NO_BON_LIVRAISON drop default; 
+
+
 -- ======================= --
 -- DONNEES TEST (fictives) --
 -- ======================= --
@@ -447,4 +456,3 @@ values
 	
 	-- Livraison commande 4 (Construction - sur chantier)
 	(4, 'Livrer directement au chantier', 50, '2024-01-28', '450, rue des Érables', 'Candiac', 'J5R 3K9', 35.00);
-

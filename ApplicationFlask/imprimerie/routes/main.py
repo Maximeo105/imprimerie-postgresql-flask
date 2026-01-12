@@ -5,6 +5,13 @@ from db import execute_query, execute_query_one, execute_insert, execute_update,
 main_bp = Blueprint('main', __name__)
 
 
+
+def nettoyer_telephone(tel):
+    """Enlève tout sauf les chiffres d'un numéro de téléphone."""
+    if not tel:
+        return None
+    return ''.join(c for c in tel if c.isdigit()) or None
+
 # =============================================================================
 # TABLEAU DE BORD
 # =============================================================================
@@ -263,7 +270,7 @@ def sauvegarder_commande(no_commande):
             form.get('adresse_compagnie_cli') or None,
             form.get('ville_compagnie_cli') or None,
             form.get('code_postal_compagnie_cli') or None,
-            form.get('numero_telephone_compagnie_cli') or None
+            nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None
         ))
     
     # Gérer l'impression et les contraintes
@@ -375,13 +382,14 @@ def sauvegarder_commande(no_commande):
     # Ajouter livraison si remplie
     if form.get('livraison_quantite'):
         sql_liv = """
-            insert into LIVRAISON (NO_COMMANDE, DATE_LIVRAISON, QUANTITE_LIVRAISON,
+            insert into LIVRAISON (NO_COMMANDE, NO_BON_LIVRAISON, DATE_LIVRAISON, QUANTITE_LIVRAISON,
                                    ADRESSE_LIVRAISON, VILLE_LIVRAISON, CODE_POSTAL_LIVRAISON,
                                    NOTES_LIVRAISON, COUT_LIVRAISON)
-            values (%s, %s, %s, %s, %s, %s, %s, %s)
+            values (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         execute_insert(sql_liv, (
             no_commande,
+            int(form.get('livraison_no_bon')) if form.get('livraison_no_bon') else None,
             form.get('livraison_date') or None,
             int(form.get('livraison_quantite')),
             form.get('livraison_adresse') or None,
@@ -461,7 +469,7 @@ def client_nouveau():
             form.get('adresse_compagnie_cli') or None,
             form.get('ville_compagnie_cli') or None,
             form.get('code_postal_compagnie_cli') or None,
-            form.get('numero_telephone_compagnie_cli') or None
+            nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None
         ))
         flash("Client créé.", "success")
     except DatabaseError as e:
@@ -552,7 +560,7 @@ def client_modifier(no_client):  # ✅ Bon nom de paramètre
                 form.get('adresse_compagnie_cli') or None,
                 form.get('ville_compagnie_cli') or None,
                 form.get('code_postal_compagnie_cli') or None,
-                form.get('numero_telephone_compagnie_cli') or None,
+                nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None,
                 no_client
             ))
             flash("Client modifié.", "success")

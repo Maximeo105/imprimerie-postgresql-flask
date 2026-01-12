@@ -24,6 +24,20 @@
     }
     .similarite-item:last-child { border-bottom: none; }
     .similarite-item button { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+
+    fieldset {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    fieldset legend {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--primary);
+        padding: 0 0.5rem;
+    }
 </style>
 
 <h2>{% if commande %}Modifier commande #{{ commande.no_commande }}{% else %}Nouvelle commande{% endif %}</h2>
@@ -314,7 +328,10 @@
 
         <p><strong>Ajouter une livraison</strong></p>
         <div class="grid">
+            <label>N° Bon livraison <input type="number" name="livraison_no_bon" min="1"></label>
             <label>Date <input type="date" name="livraison_date"></label>
+        </div>
+        <div class="grid">
             <label>Quantité <input type="number" name="livraison_quantite" min="1"></label>
             <label>Coût ($) <input type="number" name="livraison_cout" step="0.01" min="0" value="0"></label>
         </div>
