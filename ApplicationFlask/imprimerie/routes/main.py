@@ -12,6 +12,17 @@ def nettoyer_telephone(tel):
         return None
     return ''.join(c for c in tel if c.isdigit()) or None
 
+
+def nettoyer_code_postal(cp):
+    """Formate un code postal canadien: 'j4w2t8' ou 'J4W 2T8' → 'J4W 2T8'"""
+    if not cp:
+        return None
+    # Enlever espaces et mettre en majuscules
+    cp = ''.join(cp.split()).upper()
+    # Si 6 caractères, ajouter l'espace au milieu
+    if len(cp) == 6:
+        return cp[:3] + ' ' + cp[3:]
+    return cp or None
 # =============================================================================
 # TABLEAU DE BORD
 # =============================================================================
@@ -142,7 +153,7 @@ def commande_details(no_commande):
     livraisons = execute_query("select * from LIVRAISON where NO_COMMANDE = %s order by DATE_LIVRAISON", (no_commande,))
     
     # Calculer coût total
-    cout_total = (commande['cout_commande'] or 0) + (commande['cout_infographie'] or 0) + (commande['cout_sous_traitant'] or 0)
+    cout_total = (commande['cout_commande'] or 0) + (commande['cout_infographie'] or 0)
     cout_livraisons = sum(liv['cout_livraison'] or 0 for liv in livraisons)
     cout_total += cout_livraisons
     
@@ -196,20 +207,22 @@ def commande_modifier(no_commande):
     if not commande:
         flash("Commande introuvable.", "danger")
         return redirect(url_for('main.tableau_bord'))
-    
+
     livraisons = execute_query("select * from LIVRAISON where NO_COMMANDE = %s order by DATE_LIVRAISON", (no_commande,))
     clients = execute_query("select * from CLIENT order by NOM_COMPAGNIE_CLI")
     types_travail = execute_query("select * from TYPE_TRAVAIL order by TYPE_TRAVAIL")
     sous_traitants = execute_query("select * from SOUS_TRAITANT order by NOM_SOUS_TRAITANT")
-    
+    types_finition = execute_query("select * from TYPE_FINITION order by NOM_FINITION")
+
     return render_template('commande_form.html',
-                          commande=commande,
-                          livraisons=livraisons,
-                          clients=clients,
-                          types_travail=types_travail,
-                          sous_traitants=sous_traitants,
-                          today=date.today().isoformat(),
-                          client_preselect=None)
+                           commande=commande,
+                           livraisons=livraisons,
+                           clients=clients,
+                           types_travail=types_travail,
+                           sous_traitants=sous_traitants,
+                           types_finition=types_finition,
+                           today=date.today().isoformat(),
+                           client_preselect=None)
 
 
 # =============================================================================
@@ -229,19 +242,21 @@ def commande_nouveau():
     client_preselect = None
     if no_client:
         client_preselect = execute_query_one("select * from CLIENT where NO_CLIENT = %s", (no_client,))
-    
+
     clients = execute_query("select * from CLIENT order by NOM_COMPAGNIE_CLI")
     types_travail = execute_query("select * from TYPE_TRAVAIL order by TYPE_TRAVAIL")
     sous_traitants = execute_query("select * from SOUS_TRAITANT order by NOM_SOUS_TRAITANT")
-    
+    types_finition = execute_query("select * from TYPE_FINITION order by NOM_FINITION")
+
     return render_template('commande_form.html',
-                          commande=None,
-                          livraisons=[],
-                          clients=clients,
-                          types_travail=types_travail,
-                          sous_traitants=sous_traitants,
-                          today=date.today().isoformat(),
-                          client_preselect=client_preselect)
+                           commande=None,
+                           livraisons=[],
+                           clients=clients,
+                           types_travail=types_travail,
+                           sous_traitants=sous_traitants,
+                           types_finition=types_finition,
+                           today=date.today().isoformat(),
+                           client_preselect=client_preselect)
 
 
 def sauvegarder_commande(no_commande):
@@ -269,7 +284,7 @@ def sauvegarder_commande(no_commande):
             form.get('nom_contact_cli') or None,
             form.get('adresse_compagnie_cli') or None,
             form.get('ville_compagnie_cli') or None,
-            form.get('code_postal_compagnie_cli') or None,
+            nettoyer_code_postal(form.get('code_postal_compagnie_cli')),
             nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None
         ))
     
@@ -306,7 +321,8 @@ def sauvegarder_commande(no_commande):
                 TYPE_PAPIER = %s, TYPE_FINITION = %s, NUMEROTAGE_FINITION_DEBUT = %s,
                 NUMEROTAGE_FINITION_FIN = %s, NOTES_FINITION = %s, NOTES_COMMANDE = %s,
                 NO_SOUS_TRAITANT = %s, PO_SOUS_TRAITANT = %s, COUT_COMMANDE = %s,
-                COUT_INFOGRAPHIE = %s, COUT_SOUS_TRAITANT = %s
+                COUT_INFOGRAPHIE = %s, COUT_SOUS_TRAITANT = %s,
+                CONTACT_PRENOM_COMMANDE = %s, CONTACT_NOM_COMMANDE = %s, CONTACT_TELEPHONE_COMMANDE = %s
             where NO_COMMANDE = %s
         """
         params = (
@@ -323,7 +339,7 @@ def sauvegarder_commande(no_commande):
             type_encre_recto,
             type_encre_verso,
             form.get('type_papier') or None,
-            form.get('type_finition') or None,
+            ', '.join(form.getlist('finitions')) or None,
             int(form.get('numerotage_finition_debut')) if form.get('numerotage_finition_debut') else None,
             int(form.get('numerotage_finition_fin')) if form.get('numerotage_finition_fin') else None,
             form.get('notes_finition') or None,
@@ -333,6 +349,9 @@ def sauvegarder_commande(no_commande):
             float(form.get('cout_commande') or 0),
             float(form.get('cout_infographie')) if form.get('cout_infographie') else None,
             float(form.get('cout_sous_traitant')) if form.get('cout_sous_traitant') else None,
+            form.get('prenom_contact_cli') or None,
+            form.get('nom_contact_cli') or None,
+            nettoyer_telephone(form.get('numero_telephone_compagnie_cli')),
             no_commande
         )
         execute_update(sql, params)
@@ -347,8 +366,9 @@ def sauvegarder_commande(no_commande):
                 TYPE_PAPIER, TYPE_FINITION, NUMEROTAGE_FINITION_DEBUT,
                 NUMEROTAGE_FINITION_FIN, NOTES_FINITION, NOTES_COMMANDE,
                 NO_SOUS_TRAITANT, PO_SOUS_TRAITANT, COUT_COMMANDE,
-                COUT_INFOGRAPHIE, COUT_SOUS_TRAITANT
-            ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                COUT_INFOGRAPHIE, COUT_SOUS_TRAITANT,
+                CONTACT_PRENOM_COMMANDE, CONTACT_NOM_COMMANDE, CONTACT_TELEPHONE_COMMANDE
+            ) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             returning NO_COMMANDE
         """
         params = (
@@ -365,7 +385,7 @@ def sauvegarder_commande(no_commande):
             type_encre_recto,
             type_encre_verso,
             form.get('type_papier') or None,
-            form.get('type_finition') or None,
+            ', '.join(form.getlist('finitions')) or None,
             int(form.get('numerotage_finition_debut')) if form.get('numerotage_finition_debut') else None,
             int(form.get('numerotage_finition_fin')) if form.get('numerotage_finition_fin') else None,
             form.get('notes_finition') or None,
@@ -374,13 +394,16 @@ def sauvegarder_commande(no_commande):
             form.get('po_sous_traitant') or None,
             float(form.get('cout_commande') or 0),
             float(form.get('cout_infographie')) if form.get('cout_infographie') else None,
-            float(form.get('cout_sous_traitant')) if form.get('cout_sous_traitant') else None
+            float(form.get('cout_sous_traitant')) if form.get('cout_sous_traitant') else None,
+            form.get('prenom_contact_cli') or None,
+            form.get('nom_contact_cli') or None,
+            nettoyer_telephone(form.get('numero_telephone_compagnie_cli'))
         )
         no_commande = execute_insert(sql, params)
         flash(f"Commande #{no_commande} créée.", "success")
     
     # Ajouter livraison si remplie
-    if form.get('livraison_quantite'):
+    if form.get('livraison_quantite') or form.get('livraison_no_bon'):
         sql_liv = """
             insert into LIVRAISON (NO_COMMANDE, NO_BON_LIVRAISON, DATE_LIVRAISON, QUANTITE_LIVRAISON,
                                    ADRESSE_LIVRAISON, VILLE_LIVRAISON, CODE_POSTAL_LIVRAISON,
@@ -394,7 +417,7 @@ def sauvegarder_commande(no_commande):
             int(form.get('livraison_quantite')),
             form.get('livraison_adresse') or None,
             form.get('livraison_ville') or None,
-            form.get('livraison_code_postal') or None,
+            nettoyer_code_postal(form.get('livraison_code_postal')),
             form.get('livraison_notes') or None,
             float(form.get('livraison_cout')) if form.get('livraison_cout') else 0
         ))
@@ -468,7 +491,7 @@ def client_nouveau():
             form.get('nom_contact_cli') or None,
             form.get('adresse_compagnie_cli') or None,
             form.get('ville_compagnie_cli') or None,
-            form.get('code_postal_compagnie_cli') or None,
+            nettoyer_code_postal(form.get('code_postal_compagnie_cli')),
             nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None
         ))
         flash("Client créé.", "success")
@@ -501,38 +524,53 @@ def client_supprimer(no_client):
 def parametres():
     if request.method == 'POST':
         action = request.form.get('action')
-        
+
         try:
             if action == 'ajouter_type':
                 nom = request.form.get('type_travail', '').strip()
                 if nom:
                     execute_insert("insert into TYPE_TRAVAIL (TYPE_TRAVAIL) values (%s)", (nom,))
                     flash(f"Type '{nom}' ajouté.", "success")
-            
+
             elif action == 'supprimer_type':
                 no_dossier = request.form.get('no_dossier')
                 execute_update("delete from TYPE_TRAVAIL where NO_DOSSIER = %s", (no_dossier,))
                 flash("Type supprimé.", "success")
-            
+
             elif action == 'ajouter_sous_traitant':
                 nom = request.form.get('nom_sous_traitant', '').strip()
                 if nom:
                     execute_insert("insert into SOUS_TRAITANT (NOM_SOUS_TRAITANT) values (%s)", (nom,))
                     flash(f"Sous-traitant '{nom}' ajouté.", "success")
-            
+
             elif action == 'supprimer_sous_traitant':
-                execute_update("delete from SOUS_TRAITANT where NO_SOUS_TRAITANT = %s", (request.form.get('no_sous_traitant'),))
+                execute_update("delete from SOUS_TRAITANT where NO_SOUS_TRAITANT = %s",
+                               (request.form.get('no_sous_traitant'),))
                 flash("Sous-traitant supprimé.", "success")
-        
+
+            elif action == 'ajouter_finition':
+                nom = request.form.get('nom_finition', '').strip()
+                if nom:
+                    execute_insert("insert into TYPE_FINITION (NOM_FINITION) values (%s)", (nom,))
+                    flash(f"Finition '{nom}' ajoutée.", "success")
+
+            elif action == 'supprimer_finition':
+                execute_update("delete from TYPE_FINITION where NO_FINITION = %s", (request.form.get('no_finition'),))
+                flash("Finition supprimée.", "success")
+
         except DatabaseError as e:
             flash(str(e), "danger")
-        
+
         return redirect(url_for('main.parametres'))
-    
+
     types_travail = execute_query("select * from TYPE_TRAVAIL order by TYPE_TRAVAIL")
     sous_traitants = execute_query("select * from SOUS_TRAITANT order by NOM_SOUS_TRAITANT")
-    
-    return render_template('parametres.html', types_travail=types_travail, sous_traitants=sous_traitants)
+    types_finition = execute_query("select * from TYPE_FINITION order by NOM_FINITION")
+
+    return render_template('parametres.html',
+                           types_travail=types_travail,
+                           sous_traitants=sous_traitants,
+                           types_finition=types_finition)
 
 
 @main_bp.route('/client/<int:no_client>/modifier', methods=['GET', 'POST'])
@@ -559,7 +597,7 @@ def client_modifier(no_client):  # ✅ Bon nom de paramètre
                 form.get('nom_contact_cli') or None,
                 form.get('adresse_compagnie_cli') or None,
                 form.get('ville_compagnie_cli') or None,
-                form.get('code_postal_compagnie_cli') or None,
+                nettoyer_code_postal(form.get('code_postal_compagnie_cli')),
                 nettoyer_telephone(form.get('numero_telephone_compagnie_cli')) or None,
                 no_client
             ))

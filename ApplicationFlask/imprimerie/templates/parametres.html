@@ -69,6 +69,38 @@
     </div>
 </div>
 
+ <div class="card">
+        <div class="card-header">Types de finition</div>
+
+        <form method="post">
+            <div class="grid">
+                <input type="text" name="nom_finition" placeholder="Nouveau type de finition..." required>
+                <button type="submit" name="action" value="ajouter_finition">Ajouter</button>
+            </div>
+        </form>
+
+        <hr>
+
+        {% if types_finition %}
+        <ul>
+            {% for fin in types_finition %}
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0;">
+                {{ fin.nom_finition }}
+                <form method="post" style="margin: 0;">
+                    <input type="hidden" name="no_finition" value="{{ fin.no_finition }}">
+                    <button type="submit" name="action" value="supprimer_finition" class="secondary outline"
+                            onclick="return confirm('Supprimer?')"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Supprimer</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Aucun type de finition.</p>
+        {% endif %}
+    </div>
+</div>
+
 {% endblock %}
 
 

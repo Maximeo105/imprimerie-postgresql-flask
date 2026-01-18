@@ -79,11 +79,11 @@
         <div class="grid">
             <label>Prénom contact
                 <input type="text" name="prenom_contact_cli" id="prenom_contact_cli"
-                       value="{{ client_preselect.prenom_contact_cli if client_preselect else (commande.prenom_contact_cli if commande else '') }}">
+                       value="{{ client_preselect.prenom_contact_cli if client_preselect else (commande.contact_prenom_commande if commande else '') }}">
             </label>
             <label>Nom contact
                 <input type="text" name="nom_contact_cli" id="nom_contact_cli"
-                       value="{{ client_preselect.nom_contact_cli if client_preselect else (commande.nom_contact_cli if commande else '') }}">
+                       value="{{ client_preselect.nom_contact_cli if client_preselect else (commande.contact_nom_commande if commande else '') }}">
             </label>
         </div>
 
@@ -147,7 +147,7 @@
         </label>
 
         <label>Notes commande
-            <textarea name="notes_commande" rows="2">{{ commande.notes_commande if commande else '' }}</textarea>
+            <textarea name="notes_commande" rows="2">{{ commande.notes_commande or '' if commande else '' }}</textarea>
         </label>
     </fieldset>
 
@@ -230,16 +230,16 @@
     <fieldset>
         <legend>Finition</legend>
 
-        <label>Type de finition
-            <select name="type_finition">
-                <option value="">-- Aucune --</option>
-                <option value="Plié" {% if commande and commande.type_finition == 'Plié' %}selected{% endif %}>Plié</option>
-                <option value="Broché" {% if commande and commande.type_finition == 'Broché' %}selected{% endif %}>Broché</option>
-                <option value="Laminé" {% if commande and commande.type_finition == 'Laminé' %}selected{% endif %}>Laminé</option>
-                <option value="Perforé" {% if commande and commande.type_finition == 'Perforé' %}selected{% endif %}>Perforé</option>
-                <option value="Numéroté" {% if commande and commande.type_finition == 'Numéroté' %}selected{% endif %}>Numéroté</option>
-            </select>
-        </label>
+        <label>Types de finition</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+            {% for fin in types_finition %}
+            <label>
+                <input type="checkbox" name="finitions" value="{{ fin.nom_finition }}"
+                    {% if commande and fin.nom_finition in (commande.type_finition or '') %}checked{% endif %}>
+                {{ fin.nom_finition }}
+            </label>
+            {% endfor %}
+        </div>
 
         <div class="grid">
             <label>Numérotation de
@@ -253,7 +253,7 @@
         </div>
 
         <label>Notes finition
-            <textarea name="notes_finition" rows="2">{{ commande.notes_finition if commande else '' }}</textarea>
+            <textarea name="notes_finition" rows="2">{{ commande.notes_finition or '' if commande else '' }}</textarea>
         </label>
     </fieldset>
 

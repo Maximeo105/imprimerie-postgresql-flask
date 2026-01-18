@@ -124,7 +124,7 @@
                     </tr>
                     <tr>
                         <td class="label">Contact</td>
-                        <td class="value">{{ commande.prenom_contact_cli or '' }} {{ commande.nom_contact_cli or '-' }}</td>
+                        <td class="value">{{ commande.contact_prenom_commande or '' }} {{ commande.contact_nom_commande or '-' }}</td>
                     </tr>
                     <tr>
                         <td class="label">Adresse</td>
@@ -230,7 +230,7 @@
                     {% endif %}
                 </table>
                 {% if commande.notes_finition %}
-                <div class="notes-box">{{ commande.notes_finition }}</div>
+                <div class="notes-box"><strong>Notes:</strong> {{ commande.notes_finition }}</div>
                 {% endif %}
             </div>
             {% endif %}
@@ -295,12 +295,19 @@
             <tbody>
                 {% for liv in livraisons %}
                 <tr>
-                    <td>{{ liv.no_bon_livraison }}</td>
+                    <td>{{ liv.no_bon_livraison or '-' }}</td>
                     <td>{{ liv.date_livraison or '-' }}</td>
                     <td>{{ liv.quantite_livraison }}</td>
-                    <td>{{ liv.adresse_livraison or '' }} {{ liv.ville_livraison or '' }}</td>
+                    <td>{{ liv.adresse_livraison or '' }}{% if liv.ville_livraison %}, {{ liv.ville_livraison }}{% endif %}{% if liv.code_postal_livraison %} {{ liv.code_postal_livraison }}{% endif %}</td>
                     <td>{{ "%.2f"|format(liv.cout_livraison or 0) }} $</td>
                 </tr>
+                {% if liv.notes_livraison %}
+                <tr>
+                    <td colspan="5" style="padding-left: 1rem; font-style: italic; background: #f8f9fa;">
+                        Notes: {{ liv.notes_livraison }}
+                    </td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
