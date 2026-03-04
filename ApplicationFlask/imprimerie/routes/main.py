@@ -574,7 +574,7 @@ def parametres():
 
 
 @main_bp.route('/client/<int:no_client>/modifier', methods=['GET', 'POST'])
-def client_modifier(no_client):  # ✅ Bon nom de paramètre
+def client_modifier(no_client):
 
     # Si formulaire soumis (POST)
     if request.method == 'POST':
